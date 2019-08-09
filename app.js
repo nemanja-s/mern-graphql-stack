@@ -1,10 +1,10 @@
 const express = require("express");
 const graphqlHttp = require("express-graphql");
 const { buildSchema } = require("graphql");
+const mongoose = require("mongoose");
+const Event = require("./models/event");
 
 const app = express();
-
-const events = [];
 
 app.use(express.json());
 
@@ -41,21 +41,39 @@ app.use(
       }
     `),
     rootValue: {
-      events: () => events,
+      events: () =>
+        Event.find()
+          .then(events => events.map(event => ({ ...event._doc })))
+          .catch(error => {
+            throw error;
+          }),
       createEvent: args => {
-        const event = {
-          _id: Math.random().toString(),
+        const event = new Event({
           title: args.eventInput.title,
           description: args.eventInput.description,
           price: +args.eventInput.price,
-          date: args.eventInput.date
-        };
-        events.push(event);
-        return event;
+          date: new Date(args.eventInput.date)
+        });
+        return event
+          .save()
+          .then(result => ({ ...result._doc }))
+          .catch(error => {
+            throw error;
+          });
       }
     },
     graphiql: true
   })
 );
 
-app.listen(3000);
+mongoose
+  .connect(
+    `mongodb+srv://${process.env.MONGO_USER}:${
+      process.env.MONGO_PASSWORD
+    }@cluster0-ifhlc.mongodb.net/${
+      process.env.MONGO_DB
+    }?retryWrites=true&w=majority`,
+    { useNewUrlParser: true }
+  )
+  .then(() => app.listen(3000))
+  .catch(error => console.log(error));
