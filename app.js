@@ -1,14 +1,12 @@
 const express = require("express");
 const graphqlHttp = require("express-graphql");
 const mongoose = require("mongoose");
-
 const graphQlSchema = require("./graphql/schema");
 const graphQlResolvers = require("./graphql/resolvers");
 
 const app = express();
 
 app.use(express.json());
-
 app.use(
   "/graphql",
   graphqlHttp({
